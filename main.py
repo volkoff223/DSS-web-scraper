@@ -34,6 +34,10 @@ for date in df.columns:
     if date.startswith('S'):
         df.drop([date], axis=1, inplace=True)
 
+#! Scan only Wed to Wed
+        
+
+
 # search each column for 'I' and return Child Name and date
 print('INCOMPLETE ATTENDANCE TRANSACTION')
 print('---------------------------------')
@@ -42,3 +46,7 @@ for date in df.columns:
     for idx in df.index:
         if df.loc[idx][date] == 'I':
             print(df.iloc[idx, 0], date, file_date.strftime('%B'), input_year)
+
+#! return all empty cells as "Child did not scan in"
+
+#! Send email to center
