@@ -39,14 +39,19 @@ for date in df.columns:
 
 
 # search each column for 'I' and return Child Name and date
-print('INCOMPLETE ATTENDANCE TRANSACTION')
-print('---------------------------------')
-hit_list = pd.DataFrame()
-for date in df.columns:
-    for idx in df.index:
-        if df.loc[idx][date] == 'I':
-            print(df.iloc[idx, 0], date, file_date.strftime('%B'), input_year)
+inconplete_scan = []
+no_scan = []
 
-#! return all empty cells as "Child did not scan in"
+for idate in df.columns:
+    for idx in df.index:
+        if df.loc[idx][idate] == 'I':
+            inconplete_scan_info = df.iloc[idx, 0], idate, file_date.strftime('%B'), input_year
+            inconplete_scan.append(inconplete_scan_info)
+
+        elif type(df.loc[idx][idate]) == float:
+            no_scan_info = df.iloc[idx, 0], idate, file_date.strftime('%B'), input_year
+            no_scan.append(no_scan_info)
+
+print(inconplete_scan_info)
 
 #! Send email to center
