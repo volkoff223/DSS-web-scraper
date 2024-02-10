@@ -65,26 +65,17 @@ def login_and_scan(center, id, password):
         if date.startswith('S'):
             df.drop([date], axis=1, inplace=True)
 
-    inconplete_scan = []
-    no_scan = []
+    inconplete_scan = {"Name":[], "Date":[]}
+    no_scan = {"Name":[], "Date":[]}
     for idate in df.columns:
         for idx in df.index:
             if df.loc[idx][idate] == 'I':
-                inconplete_scan_info = df.iloc[idx, 0] +" "+ idate + today.strftime('%B')
-                inconplete_scan.append(inconplete_scan_info)
+                inconplete_scan["Name"] += [df.iloc[idx, 0]]
+                inconplete_scan["Date"] += [idate + today.strftime('%B')]
 
             elif type(df.loc[idx][idate]) == float:
-                no_scan_info = df.iloc[idx, 0] +" "+ idate + today.strftime('%B')
-                no_scan.append(no_scan_info)
+                no_scan["Name"] += [df.iloc[idx, 0]]
+                no_scan["Date"] += [idate + today.strftime('%B')]
+    print(inconplete_scan, no_scan)
 
-    print('INCOMPLETE SCANS:', inconplete_scan, 'NO SCANS:', no_scan)
-    file = open(center + '.txt', 'w')
-    file.write(center)
-    file.write("\nINCOMPLETE SCANS:\n")
-    for scan in inconplete_scan:
-        file.write(scan+'\n')
-    file.write("\nNO SCAN:\n")
-    for nscan in no_scan:
-        file.write(nscan+'\n')
-    file.close()
     # driver.close()
