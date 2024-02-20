@@ -5,17 +5,20 @@ import pandas as pd
 import io
 from datetime import date
 import datetime
+import shutil
+import webbrowser
 
 
 
-today = datetime.datetime.now()
+
+today = date.today()
 first_date_of_month = today.replace(day=1)
 
 
 def login_and_scan(center, id, password):
     # Selenium to login and get to correct page
     options = webdriver.ChromeOptions()
-    # options.add_argument("--headless=new")
+    #options.add_argument("--headless=new")
     driver = webdriver.Chrome(options=options)
     driver.get("https://www.vaecc.org/eccpw")
     el_username = driver.find_element(By.NAME, "login")
@@ -49,33 +52,46 @@ def login_and_scan(center, id, password):
     df=df[:-9]
     #remove multi level column name
     df.columns = df.columns.droplevel()
-    #remove usless columns
+    #remove usless columns and everything from 7 days ago
     df.drop(columns=df.columns[1:4], inplace=True)
     #remove dates in the future
-    df.drop(columns=df.columns[9:], inplace=True) ## change 9 to todays date
-
+    df.drop(columns=df.columns[today.day:], inplace=True)
+    print(df)
+ 
     # rename all column names to date
     index = 1
     while index < len(df.columns):
-        df.rename(columns={str(index): first_date_of_month.replace(day=index).strftime('%a %d')}, inplace=True)
-        index +=1
+        df.rename(columns={df.columns[index]: first_date_of_month.replace(day=index)}, inplace=True)
+        index += 1
+    #remove dates from begining of month to 7 days ago
+    df.drop(columns=df.columns[1:today.day-7], inplace=True)
+    
+    # remove weekends
+    for col in df.columns:
+        if isinstance(col, datetime.date):
+            if col.weekday() > 4:
+                df.drop(columns=col, inplace=True)
 
-    # # remove weekend
-    for date in df.columns:
-        if date.startswith('S'):
-            df.drop([date], axis=1, inplace=True)
-
-    inconplete_scan = {"Name":[], "Date":[]}
+    incomplete_scan = {"Name":[], "Date":[]}
     no_scan = {"Name":[], "Date":[]}
     for idate in df.columns:
         for idx in df.index:
             if df.loc[idx][idate] == 'I':
-                inconplete_scan["Name"] += [df.iloc[idx, 0]]
-                inconplete_scan["Date"] += [idate + today.strftime('%B')]
+                incomplete_scan["Name"] += [df.iloc[idx, 0]]
+                incomplete_scan["Date"] += [idate.strftime("%m/%d/%y")]
 
-            elif type(df.loc[idx][idate]) == float:
+            if type(df.loc[idx][idate]) == float:
                 no_scan["Name"] += [df.iloc[idx, 0]]
-                no_scan["Date"] += [idate + today.strftime('%B')]
-    print(inconplete_scan, no_scan)
+                no_scan["Date"] += [idate.strftime("%m/%d/%y")]
+    
+    df = pd.DataFrame(incomplete_scan)
+    df1 = pd.DataFrame(no_scan)
 
-    # driver.close()
+    shutil.copyfile('style_template.html', 'DSS_report.html')
+
+    f = open('scan_report.html', 'w')
+    f.write('<h1>' + center + '</h1>' + '\n' + '<h3>Incomplete Scans</h3>' + '\n' + df.to_html(index=False) + '\n' + '<h3>No Scans</h3>' + '\n' + df1.to_html(index=False) + '\n' + '</body></html>')
+    driver.close()
+    driver.quit()
+    webbrowser.open_new('scan_report.html')
+    return
