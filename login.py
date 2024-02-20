@@ -11,8 +11,10 @@ import webbrowser
 
 
 
+
 today = date.today()
 first_date_of_month = today.replace(day=1)
+
 
 
 def login_and_scan(center, id, password):
@@ -52,17 +54,23 @@ def login_and_scan(center, id, password):
     df=df[:-9]
     #remove multi level column name
     df.columns = df.columns.droplevel()
-    #remove usless columns and everything from 7 days ago
+    #remove usless columns and everything from
     df.drop(columns=df.columns[1:4], inplace=True)
+
+    #! Need to add functionality for scans that cover current month and last month
+
+
     #remove dates in the future
     df.drop(columns=df.columns[today.day:], inplace=True)
-    print(df)
+
  
     # rename all column names to date
     index = 1
     while index < len(df.columns):
         df.rename(columns={df.columns[index]: first_date_of_month.replace(day=index)}, inplace=True)
         index += 1
+
+
     #remove dates from begining of month to 7 days ago
     df.drop(columns=df.columns[1:today.day-7], inplace=True)
     
