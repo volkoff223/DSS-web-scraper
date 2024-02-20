@@ -95,7 +95,6 @@ def login_and_scan(center, id, password):
     df = pd.DataFrame(incomplete_scan)
     df1 = pd.DataFrame(no_scan)
 
-    shutil.copyfile('style_template.html', 'DSS_report.html')
 
     f = open('scan_report.html', 'w')
     f.write('<h1>' + center + '</h1>' + '\n' + '<h3>Incomplete Scans</h3>' + '\n' + df.to_html(index=False) + '\n' + '<h3>No Scans</h3>' + '\n' + df1.to_html(index=False) + '\n' + '</body></html>')
