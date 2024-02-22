@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 import pandas as pd
 import io
@@ -12,16 +13,19 @@ import webbrowser
 
 
 
+
 today = date.today()
 first_date_of_month = today.replace(day=1)
 
 
 
-def login_and_scan(center, id, password):
+async def login_and_scan(center, id, password):
+
     # Selenium to login and get to correct page
+    service = Service()
     options = webdriver.ChromeOptions()
     #options.add_argument("--headless=new")
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(service=service, options=options)
     driver.get("https://www.vaecc.org/eccpw")
     el_username = driver.find_element(By.NAME, "login")
     el_username.send_keys(id)
@@ -72,7 +76,7 @@ def login_and_scan(center, id, password):
 
 
     #remove dates from begining of month to 7 days ago
-    df.drop(columns=df.columns[1:today.day-7], inplace=True)
+    df.drop(columns=df.columns[1:today.day-8], inplace=True)
     
     # remove weekends
     for col in df.columns:
