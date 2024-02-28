@@ -105,4 +105,3 @@ async def login_and_scan(center, id, password):
     driver.close()
     driver.quit()
     webbrowser.open_new('scan_report.html')
-    return

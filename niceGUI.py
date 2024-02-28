@@ -1,12 +1,11 @@
 
 
-from nicegui import ui
+from nicegui import ui, run
 from secure import passwrd, user_id
 import time
 import asyncio
 
 from login import login_and_scan
-
 async def run_scan():
     if center.value == None:
         ui.notify('You must select a center')
@@ -18,7 +17,7 @@ async def run_scan():
         except:
             print('Somthing went wrong')
         finally:
-            print('everything worked')
+            #refreash page dumbass
             ui.notify('it worked')
             run_scan_btn.enable()
 
