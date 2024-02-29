@@ -40,5 +40,5 @@ with ui.card().classes('items-center w-full no-shadow'):
         run_scan_btn = ui.button('RUN SCAN!', on_click=run_scan)
 
 
-ui.run(native=True, favicon='🚀', title="Jen's DSS Scan Tool")
+ui.run(reload=False, native=True, favicon='🚀', title="Jen's DSS Scan Tool")
 
