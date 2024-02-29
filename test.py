@@ -95,7 +95,7 @@ def login_and_scan(center, id, password):
             if isinstance(col, datetime.date):
                 if col.weekday() > 4:
                     df.drop(columns=col, inplace=True)
-
+        print(df)
         last_month_incomplete_scan = {"Name":[], "Date":[]}
         last_month_no_scan = {"Name":[], "Date":[]}
         for idate in df.columns:
@@ -107,9 +107,7 @@ def login_and_scan(center, id, password):
                 if type(df.loc[idx][idate]) == float:
                     last_month_no_scan["Name"] += [df.iloc[idx, 0]]
                     last_month_no_scan["Date"] += [idate.strftime("%m/%d/%y")]
-        
-        last_month_df = pd.DataFrame(last_month_incomplete_scan)
-        last_month_df1 = pd.DataFrame(last_month_no_scan)
+
 
     max_rows = driver.find_element(By.NAME, "maxRows")
     max_rows.click()
@@ -173,12 +171,11 @@ def login_and_scan(center, id, password):
 
     #! Clean lmdf and lmdf1 and add to scan_report.html. 
     #!DONT FORGET TO DELETE TEST DATE
-    print(lmdf)
 
 
     f = open('scan_report.html', 'w')
-    f.write('<h1>' + center + '</h1>' + '\n' + '<h3>Incomplete Scans</h3>' + '\n' + df.to_html(index=False) + '\n' + '<h3>No Scans</h3>' + '\n' + df1.to_html(index=False) + '\n' + '</body></html>')
-    webbrowser.open_new('scan_report.html')
+    f.write('<h1>' + center + '</h1>' + '\n' + '<h3>Incomplete Scans</h3>' + '\n' + lmdf.to_html(index=False, header=False, border='0') + '\n' + df.to_html(index=False, header=False, border='0') + '\n' + '<h3>No Scans</h3>' + '\n' + lmdf1.to_html(index=False, header=False, border='0') + '\n' + df1.to_html(index=False, header=False, border='0') + '\n' + '</body></html>')
+    # webbrowser.open_new('scan_report.html')
     driver.close()
     driver.quit()
     return

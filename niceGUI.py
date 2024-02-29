@@ -11,15 +11,14 @@ async def run_scan():
         ui.notify('You must select a center')
     else:
         try:
-            run_scan_btn.disable()
+            ui.notify('Scanning, please wait.')
             await asyncio.sleep(1)
             await login_and_scan(center.value, login_id.value, password.value)
         except:
-            print('Somthing went wrong')
+            ui.notify('Somthing went wrong. Please try again')
         finally:
-            #refreash page dumbass
-            ui.notify('it worked')
-            run_scan_btn.enable()
+            await asyncio.sleep(1)
+            
 
 
 
