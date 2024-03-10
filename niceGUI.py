@@ -1,7 +1,6 @@
 
 
 from nicegui import ui, run
-from secure import passwrd, user_id
 import time
 import asyncio
 
@@ -13,7 +12,7 @@ async def run_scan():
         try:
             ui.notify('Scanning, please wait.')
             await asyncio.sleep(1)
-            await login_and_scan(center.value, login_id.value, password.value)
+            await login_and_scan(center.value, login_id.value, password.value, scan_range.value)
         except:
             ui.notify('Somthing went wrong. Please try again')
         finally:
@@ -25,20 +24,26 @@ async def run_scan():
 with ui.card().classes('items-center w-full no-shadow'):
     with ui.card():
 
-        label = ui.label("Jen's DSS Scan Tool").classes('text-2xl font-bold')
+        label = ui.label("Missed Swipe Report").classes('text-2xl font-bold')
 
         center = ui.select(['AOTK', 'Agape', 'All Day Daycare', 'Right Start'], new_value_mode=None, with_input=True,label='Choose a center').classes('required:border-red-500')
 
-        login_id = ui.input(label='Login ID', value=user_id,
+        login_id = ui.input(label='Login ID',
                 on_change=lambda e: login_id.set_value(e.value))
 
 
-        password = ui.input(label='Password', value=passwrd,
+        password = ui.input(label='Password',
                 on_change=lambda e: password.set_value(e.value))
+        
+        label = ui.label("Scan Range")
+        scan_range = ui.slider(min=4, max=10, value=7, on_change=lambda e: scan_range.set_value(e.value))
+        with ui.row():
+            label = ui.label().bind_text_from(scan_range, 'value')
+            label = ui.label("Days ago")
 
 
         run_scan_btn = ui.button('RUN SCAN!', on_click=run_scan)
 
 
-ui.run(reload=False, native=True, favicon='🚀', title="Jen's DSS Scan Tool")
+ui.run(reload=False, native=True, favicon='🚀', title="Missed Swipe Report")
 
