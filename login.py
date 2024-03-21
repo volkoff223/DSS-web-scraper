@@ -6,23 +6,15 @@ import io
 from datetime import timedelta, date
 import datetime
 import webbrowser
-import shutil
-
-
 
 styles = '<head><style>table,td,th {border: solid thin;border-collapse: collapse;}td,th {padding: 7px;}</style></head>'
 
 today = date.today()
 
-
-
 first_date_of_month = today.replace(day=1)
 month, year = (first_date_of_month.month-1, first_date_of_month.year) if first_date_of_month != 1 else (12, first_date_of_month.year-1)
 first_date_of_last_month = first_date_of_month.replace(month=month, year=year)
 last_date_of_last_month = first_date_of_month - timedelta(days=1)
-
-
-
 
 def login_and_scan(center, id, password, scan_range):
 
@@ -46,7 +38,6 @@ def login_and_scan(center, id, password, scan_range):
     report_button.click()
 
     # Grab last month if current date is in first week of month
-
     if today.day<8:
         driver.find_element(By.NAME, "monthYear").click()
         driver.find_element(By.XPATH, '//*[@id="monthYear"]/option[2]').click()
@@ -55,14 +46,12 @@ def login_and_scan(center, id, password, scan_range):
         max_rows.click()
         option = driver.find_element(By.XPATH, '//option[contains(text(), "100")]')
         option.click()
-
         # Grab table from html and remove all unusable data
         pd.options.mode.copy_on_write = True
         html = io.StringIO(driver.page_source)
         data = pd.read_html(html, match='provider_attendance')
         #grab correct table
         df = data[3]
-
         #remove usless data
         lmdf.drop([0,1,2,3,4], inplace=True)
         #reset index
@@ -70,10 +59,9 @@ def login_and_scan(center, id, password, scan_range):
         #remove last nine lines
         lmdf=lmdf[:-9]
         #remove multi level column name
-        #lmdf.columns = df.columns.droplevel()
+        lmdf.columns = df.columns.droplevel()
         #remove usless columns and everything from
         lmdf.drop(columns=lmdf.columns[1:4], inplace=True)
-
         # remove columns from end of df that are not dates (ie 30 and 31 from feb)
         lmdf.drop(columns=lmdf.columns[int(last_date_of_last_month.day) + 1:], inplace=True)
  
@@ -82,7 +70,6 @@ def login_and_scan(center, id, password, scan_range):
         while index < len(lmdf.columns):
             lmdf.rename(columns={lmdf.columns[index]: first_date_of_last_month.replace(day=index)}, inplace=True)
             index += 1
-
 
         #remove dates from begining of last month to 7 days ago
         nlmdf = pd.DataFrame(lmdf[['Child Name']])
@@ -112,7 +99,6 @@ def login_and_scan(center, id, password, scan_range):
         lmisdf = pd.DataFrame(last_month_incomplete_scan)
         lmnsdf = pd.DataFrame(last_month_no_scan)
     
-
     max_rows = driver.find_element(By.NAME, "maxRows")
     max_rows.click()
     option = driver.find_element(By.XPATH, '//option[contains(text(), "100")]')
@@ -130,27 +116,22 @@ def login_and_scan(center, id, password, scan_range):
     df.reset_index(drop=True, inplace=True)
     #remove last nine rows
     df=df[:-9]
-
     #remove usless columns and everything from
     df.drop(columns=df.columns[1:4], inplace=True)
-
     #remove dates in the future
     df.drop(columns=df.columns[today.day:], inplace=True)
-
     #remove multi-level columns
     df.columns = df.columns.droplevel(0)
-    
+
     # rename all column names to date
     index = 1
     while index < len(df.columns):
         df.rename(columns={df.columns[index]: first_date_of_month.replace(day=index)}, inplace=True)
         index += 1
 
-
     #remove dates from begining of month to scan range days
     if today.day > scan_range:
         df.drop(columns=df.columns[1:today.day-scan_range], inplace=True)
-
 
     # remove weekends
     for col in df.columns:
@@ -176,9 +157,9 @@ def login_and_scan(center, id, password, scan_range):
         isdf = pd.concat([lmisdf, isdf])
         nsdf = pd.concat([lmnsdf, nsdf])
 
-
     html = f"{styles}\n<h1>{center}</h1>\n<h3>Incomplete Scans</h3>\n{isdf.to_html(index=False, header=False, border='0')}\n<h3>No Scans</h3>\n{nsdf.to_html(index=False, header=False, border='0')}\n</></html>"
 
     f = open(f'{center}_scan_report.html', 'w')
     f.write(html)
+
     webbrowser.open_new(f'{center}_scan_report.html')

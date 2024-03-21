@@ -1,10 +1,7 @@
-
-
 from nicegui import ui, run
-import time
 import asyncio
-
 from login import login_and_scan
+
 async def run_scan():
     if center.value == None:
         ui.notify('You must select a center')
@@ -18,9 +15,6 @@ async def run_scan():
         finally:
             await asyncio.sleep(1)
             
-
-
-
 with ui.card().classes('items-center w-full no-shadow'):
     with ui.card():
 
@@ -31,7 +25,6 @@ with ui.card().classes('items-center w-full no-shadow'):
         login_id = ui.input(label='Login ID',
                 on_change=lambda e: login_id.set_value(e.value))
 
-
         password = ui.input(label='Password',
                 on_change=lambda e: password.set_value(e.value))
         
@@ -41,9 +34,7 @@ with ui.card().classes('items-center w-full no-shadow'):
             label = ui.label().bind_text_from(scan_range, 'value')
             label = ui.label("Days ago")
 
-
         run_scan_btn = ui.button('RUN SCAN!', on_click=run_scan)
 
-
-ui.run(reload=False, native=True, favicon='🚀', title="Missed Swipe Report")
+ui.run(native=False, favicon='🚀', title="Missed Swipe Report")
 

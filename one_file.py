@@ -1,32 +1,58 @@
-
+import tkinter as tk   
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
 import pandas as pd
+import io
 from datetime import timedelta, date
 import datetime
 import webbrowser
 
-
-
 styles = '<head><style>table,td,th {border: solid thin;border-collapse: collapse;}td,th {padding: 7px;}</style></head>'
 
-#! fake day must change back to "today=date.today()"
-today = date.today().replace(day=9)
-
-
+today = date.today()
 
 first_date_of_month = today.replace(day=1)
 month, year = (first_date_of_month.month-1, first_date_of_month.year) if first_date_of_month != 1 else (12, first_date_of_month.year-1)
 first_date_of_last_month = first_date_of_month.replace(month=month, year=year)
-scan_days_range = 7
 last_date_of_last_month = first_date_of_month - timedelta(days=1)
 
-def login_and_scan(center):
+def login_and_scan(center, id, password, scan_range):
 
-    df = pd.read_csv('test_df.csv')  
-    lmdf = pd.read_csv('LM_test_df.csv')
-    #!-- This is where the logic is to pull df from website --#
+    # Selenium to login and get to correct page
+    service = Service()
+    options = webdriver.ChromeOptions()
+    #options.add_argument("--headless=new")
+    driver = webdriver.Chrome(service=service, options=options)
+    driver.get("https://www.vaecc.org/eccpw")
+    el_username = driver.find_element(By.NAME, "login")
+    el_username.send_keys(id)
+    el_password = driver.find_element(By.NAME, "password")
+    el_password.send_keys(password)
+    el_login_btn = driver.find_element(By.CLASS_NAME, "login-btn")
+    el_login_btn.click()
+    cont_btn = driver.find_element(By.TAG_NAME, 'button')
+    cont_btn.click()
+    cont_btn = driver.find_element(By.NAME, 'contin')
+    cont_btn.click()
+    report_button = driver.find_element(By.XPATH, '//button[contains(text(),"ATTENDANCE REPORT")]')
+    report_button.click()
 
-
-    if today.day < 8:
+    # Grab last month if current date is in first week of month
+    if today.day<8:
+        driver.find_element(By.NAME, "monthYear").click()
+        driver.find_element(By.XPATH, '//*[@id="monthYear"]/option[2]').click()
+        driver.find_element(By.XPATH, '//*[@id="content_table"]/tbody/tr/td/table/tbody/tr[4]/td/button').click()
+        max_rows = driver.find_element(By.NAME, "maxRows")
+        max_rows.click()
+        option = driver.find_element(By.XPATH, '//option[contains(text(), "100")]')
+        option.click()
+        # Grab table from html and remove all unusable data
+        pd.options.mode.copy_on_write = True
+        html = io.StringIO(driver.page_source)
+        data = pd.read_html(html, match='provider_attendance')
+        #grab correct table
+        df = data[3]
         #remove usless data
         lmdf.drop([0,1,2,3,4], inplace=True)
         #reset index
@@ -34,10 +60,9 @@ def login_and_scan(center):
         #remove last nine lines
         lmdf=lmdf[:-9]
         #remove multi level column name
-        #lmdf.columns = df.columns.droplevel()
+        lmdf.columns = df.columns.droplevel()
         #remove usless columns and everything from
         lmdf.drop(columns=lmdf.columns[1:4], inplace=True)
-
         # remove columns from end of df that are not dates (ie 30 and 31 from feb)
         lmdf.drop(columns=lmdf.columns[int(last_date_of_last_month.day) + 1:], inplace=True)
  
@@ -47,12 +72,11 @@ def login_and_scan(center):
             lmdf.rename(columns={lmdf.columns[index]: first_date_of_last_month.replace(day=index)}, inplace=True)
             index += 1
 
-
         #remove dates from begining of last month to 7 days ago
         nlmdf = pd.DataFrame(lmdf[['Child Name']])
         for col in lmdf.columns:
             if isinstance(col, datetime.date):
-                if today-timedelta(scan_days_range) <= col:
+                if today-timedelta(scan_range) <= col:
                     nlmdf.loc[:, col] = lmdf.loc[:, col]
         lmdf = nlmdf
 
@@ -76,33 +100,39 @@ def login_and_scan(center):
         lmisdf = pd.DataFrame(last_month_incomplete_scan)
         lmnsdf = pd.DataFrame(last_month_no_scan)
     
+    max_rows = driver.find_element(By.NAME, "maxRows")
+    max_rows.click()
+    option = driver.find_element(By.XPATH, '//option[contains(text(), "100")]')
+    option.click()
 
-
+    # Grab table from html and remove all unusable data
+    pd.options.mode.copy_on_write = True
+    html = io.StringIO(driver.page_source)
+    data = pd.read_html(html, match='provider_attendance')
+    #grab correct table
+    df = data[3]
     #remove usless data
     df.drop([0,1,2,3,4], inplace=True)
     #reset index
     df.reset_index(drop=True, inplace=True)
     #remove last nine rows
     df=df[:-9]
-
     #remove usless columns and everything from
     df.drop(columns=df.columns[1:4], inplace=True)
-
     #remove dates in the future
     df.drop(columns=df.columns[today.day:], inplace=True)
+    #remove multi-level columns
+    df.columns = df.columns.droplevel(0)
 
- 
     # rename all column names to date
     index = 1
     while index < len(df.columns):
         df.rename(columns={df.columns[index]: first_date_of_month.replace(day=index)}, inplace=True)
         index += 1
 
-
     #remove dates from begining of month to scan range days
-    if today.day > scan_days_range:
-        df.drop(columns=df.columns[1:today.day-scan_days_range], inplace=True)
-
+    if today.day > scan_range:
+        df.drop(columns=df.columns[1:today.day-scan_range], inplace=True)
 
     # remove weekends
     for col in df.columns:
@@ -128,12 +158,57 @@ def login_and_scan(center):
         isdf = pd.concat([lmisdf, isdf])
         nsdf = pd.concat([lmnsdf, nsdf])
 
-
     html = f"{styles}\n<h1>{center}</h1>\n<h3>Incomplete Scans</h3>\n{isdf.to_html(index=False, header=False, border='0')}\n<h3>No Scans</h3>\n{nsdf.to_html(index=False, header=False, border='0')}\n</></html>"
 
     f = open(f'{center}_scan_report.html', 'w')
     f.write(html)
+
     webbrowser.open_new(f'{center}_scan_report.html')
 
 
-login_and_scan('AOTK')
+class Application(tk.Frame):              
+    def __init__(self, master=None):
+        tk.Frame.__init__(self, master)   
+        self.grid(padx=50, pady=50)                       
+        self.createWidgets()
+
+    def createWidgets(self):
+
+        def run_scan():
+
+            center = self.center_name.get()
+            login_id = self.user_id.get()
+            password = self.password.get()
+            scan_range = self.range.get()
+            if center == '':
+                print('working')
+            login_and_scan(center, login_id, password, scan_range)
+
+
+        self.label = tk.LabelFrame(self, text='Center Name')
+        self.label.grid(pady=5)
+        self.center_name = tk.Entry(self.label)
+        self.center_name.grid()
+
+        self.label = tk.LabelFrame(self, text='User ID')
+        self.label.grid(pady=5)
+        self.user_id = tk.Entry(self.label)
+        self.user_id.grid()
+
+        self.label = tk.LabelFrame(self, text='Password')
+        self.label.grid(pady=5)
+        self.password = tk.Entry(self.label, show='*')
+        self.password.grid()
+
+        self.label = tk.LabelFrame(self, text="Scan Range")
+        self.label.grid(pady=5)
+        self.range = tk.Scale(self.label, orient=tk.HORIZONTAL, from_=4, to=10)
+        self.range.set(7)
+        self.range.grid()
+
+        self.scanButton = tk.Button(self, text='Start Scan',command=run_scan)            
+        self.scanButton.grid(pady=(15, 0))            
+
+app = Application()                       
+app.master.title('Missed Swipe Report')    
+app.mainloop()    
