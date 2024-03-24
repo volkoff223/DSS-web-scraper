@@ -4,5 +4,5 @@ My wife was having to manually collect data from a website for her job. The task
 
 
 ![Screenshot1](Screenshot.png)
-![Screenshot2](Screenshot from website.png)
-![Screenshot3](Screenshot from scan report.png)
+![Screenshot2](Screenshot-from-website.png)
+![Screenshot3](Screenshot-from-scan-report.png)
